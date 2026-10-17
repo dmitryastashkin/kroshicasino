@@ -89,6 +89,14 @@ function controls() {
   return wrap;
 }
 
+function setupMainButton() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  tg.MainButton.setText('Вращать');
+  tg.MainButton.onClick(() => doSpin(1));
+  tg.MainButton.show();
+}
+
 async function doSpin(times) {
   if (spinning) return;
   const bet = betInputValue();
@@ -180,4 +188,4 @@ function highlightLines(lines) {
   }, 900);
 }
 
-window.games.slots = { title: 'Слоты', init, render, controls, destroy: () => { spinning = false; } };
+window.games.slots = { title: 'Слоты', init, render, controls, setupMainButton, destroy: () => { spinning = false; } };

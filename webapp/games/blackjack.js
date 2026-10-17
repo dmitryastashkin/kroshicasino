@@ -133,6 +133,33 @@ function setButtons(playing) {
   $('#bjHit').disabled = !playing;
   $('#bjStand').disabled = !playing;
   $('#bjDeal').disabled = playing;
+  updateMainButton();
 }
 
-window.games.blackjack = { title: 'Блэкджек', init, render, controls, destroy: () => { inGame = false; resolved = false; } };
+function updateMainButton() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  if (inGame && !resolved) {
+    tg.MainButton.setText('Ещё карту');
+    tg.MainButton.onClick(hit);
+    tg.MainButton.show();
+  } else if (!inGame) {
+    tg.MainButton.setText('Раздать');
+    tg.MainButton.onClick(() => {
+      const bet = betInputValue();
+      if (!window.kroshi.canBet(bet)) { toast('Недостаточно 🍬', 'err'); return; }
+      startGame(bet);
+    });
+    tg.MainButton.show();
+  } else {
+    tg.MainButton.hide();
+  }
+}
+
+function setupMainButton() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  updateMainButton();
+}
+
+window.games.blackjack = { title: 'Блэкджек', init, render, controls, setupMainButton, destroy: () => { inGame = false; resolved = false; } };

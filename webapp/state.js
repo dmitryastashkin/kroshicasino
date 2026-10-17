@@ -149,6 +149,7 @@ window.kroshi = {
   state, load, save, getBalance, setBalance, addBalance, canBet, play,
   claimDaily, getAchievements, resetDemo, addReferral, getReferralLink,
   ACHIEVEMENTS, CURRENCY, format,
+  DAILY_BONUS, REFERRAL_BONUS_INVITEE, REFERRAL_BONUS_REFERRER,
 };
 
 load();

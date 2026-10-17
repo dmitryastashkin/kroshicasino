@@ -11,8 +11,9 @@ function colorOf(n) {
 }
 
 let spinning = false;
+let activeBet = null;
 
-function init() { spinning = false; }
+function init() { spinning = false; activeBet = null; }
 
 function render() {
   const container = document.createElement('div');
@@ -45,7 +46,6 @@ function controls() {
       <button class="btn" id="btnClear">Очистить</button>
     </div>
   `;
-  let activeBet = null;
   const chips = [...document.querySelectorAll('.bet-chip')];
   const setChip = (chip) => {
     chips.forEach(c => c.classList.remove('active'));
@@ -70,6 +70,19 @@ function controls() {
   };
 
   return wrap;
+}
+
+function setupMainButton() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  tg.MainButton.setText('Вращать');
+  tg.MainButton.onClick(() => {
+    const bet = betInputValue();
+    if (!window.kroshi.canBet(bet)) { toast('Недостаточно 🍬', 'err'); return; }
+    if (!activeBet) { toast('Выбери ставку', 'err'); return; }
+    doSpin(bet, activeBet);
+  });
+  tg.MainButton.show();
 }
 
 async function doSpin(bet, betType) {
@@ -116,4 +129,4 @@ async function doSpin(bet, betType) {
   $('#btnSpinR').textContent = 'Вращать';
 }
 
-window.games.roulette = { title: 'Рулетка', init, render, controls, destroy: () => { spinning = false; } };
+window.games.roulette = { title: 'Рулетка', init, render, controls, setupMainButton, destroy: () => { spinning = false; activeBet = null; } };

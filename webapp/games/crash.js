@@ -56,6 +56,7 @@ function startRound(bet) {
   $('#crashCash').disabled = false;
   $('#crashBet').disabled = true;
   $('#crashMulti').style.color = '#8b5cf6';
+  updateCrashMainButton();
   const pts = [];
   const line = $('#crashLine');
   const wrap = $('#crashChartWrap');
@@ -106,6 +107,29 @@ function endRound(finalMulti) {
   toast(cashed ? `+${window.kroshi.format(won)} 🍬` : 'Краш!');
   $('#crashBet').disabled = false;
   $('#crashCash').disabled = true;
+  updateCrashMainButton();
 }
 
-window.games.crash = { title: 'Краш', init, render, controls, destroy: () => { running = false; resolved = false; if (raf) cancelAnimationFrame(raf); } };
+function updateCrashMainButton() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  if (running && !resolved) {
+    tg.MainButton.setText('Забрать');
+    tg.MainButton.onClick(cashOut);
+    tg.MainButton.show();
+  } else {
+    tg.MainButton.setText('Сделать ставку');
+    tg.MainButton.onClick(() => {
+      const bet = betInputValue();
+      if (!window.kroshi.canBet(bet)) { toast('Недостаточно 🍬', 'err'); return; }
+      startRound(bet);
+    });
+    tg.MainButton.show();
+  }
+}
+
+function setupMainButton() {
+  updateCrashMainButton();
+}
+
+window.games.crash = { title: 'Краш', init, render, controls, setupMainButton, destroy: () => { running = false; resolved = false; if (raf) cancelAnimationFrame(raf); } };

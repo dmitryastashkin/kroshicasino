@@ -3,8 +3,9 @@
  */
 
 let rolling = false;
+let activeBet = null;
 
-function init() { rolling = false; }
+function init() { rolling = false; activeBet = null; }
 
 function render() {
   const container = document.createElement('div');
@@ -31,7 +32,6 @@ function controls() {
   wrap.innerHTML = `
     <button class="btn btn-big" id="btnRoll">Бросить кости</button>
   `;
-  let activeBet = null;
   const chips = [...wrap.querySelectorAll('.bet-chip')];
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
@@ -90,4 +90,17 @@ async function doRoll(bet, betType) {
   btn.textContent = 'Бросить кости';
 }
 
-window.games.dice = { title: 'Кости', init, render, controls, destroy: () => { rolling = false; } };
+function setupMainButton() {
+  const tg = window.Telegram?.WebApp;
+  if (!tg) return;
+  tg.MainButton.setText('Бросить кости');
+  tg.MainButton.onClick(() => {
+    const bet = betInputValue();
+    if (!window.kroshi.canBet(bet)) { toast('Недостаточно 🍬', 'err'); return; }
+    if (!activeBet) { toast('Выбери ставку', 'err'); return; }
+    doRoll(bet, activeBet);
+  });
+  tg.MainButton.show();
+}
+
+window.games.dice = { title: 'Кости', init, render, controls, setupMainButton, destroy: () => { rolling = false; activeBet = null; } };

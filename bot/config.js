@@ -7,7 +7,7 @@
 const BOT_TOKEN = '8212506692:AAFUcXU330SGkVNuvSkqhaCcRgrXPoh-4iE';
 
 // URL веб-аппа на GitHub Pages (замените на свой после первой публикации)
-const WEBAPP_URL = 'https://YOUR_USERNAME.github.io/kroshicasino/';
+const WEBAPP_URL = 'https://github.com/dmitryastashkin/kroshicasino/';
 
 // Имя бота (без @), для deep-link'ов
 const BOT_USERNAME = 'KroshiCasinoBot';

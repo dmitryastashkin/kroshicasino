@@ -111,6 +111,12 @@ function App() {
     });
   }, [setStateFn]);
 
+  const hapticNotification = (type) => {
+    if (tg?.HapticFeedback) {
+      try { tg.HapticFeedback.notificationOccurred(type); } catch (e) {}
+    }
+  };
+
   const claimDaily = useCallback(() => {
     const now = Date.now();
     if (state.dailyBonusAt && now - state.dailyBonusAt < 24 * 60 * 60 * 1000) {
@@ -167,12 +173,6 @@ function App() {
   const setMaxBet = useCallback(() => {
     setBet(String(balance));
   }, [balance]);
-
-  const hapticNotification = (type) => {
-    if (tg?.HapticFeedback) {
-      try { tg.HapticFeedback.notificationOccurred(type); } catch (e) {}
-    }
-  };
 
   const GameComponent = currentGame ? GAME_COMPONENTS[currentGame] : null;
 

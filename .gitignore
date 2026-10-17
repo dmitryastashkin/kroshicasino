@@ -1,0 +1,7 @@
+node_modules/
+bot/data/
+*.local.js
+*.local.env
+.env
+.DS_Store
+coverage/

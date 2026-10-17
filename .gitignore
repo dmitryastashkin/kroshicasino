@@ -1,5 +1,6 @@
 node_modules/
 bot/data/
+webapp/dist/
 *.local.js
 *.local.env
 .env

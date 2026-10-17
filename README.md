@@ -1,6 +1,11 @@
 # KroshiCasino 🎰
 
-Telegram-бот с встроенным WebApp-казино. Всё настраивается через код — конфигурация, бонусы, игры, лимиты.
+Telegram-бот с встроенным WebApp-казино (Mini App). Всё настраивается через код — конфигурация, бонусы, игры, лимиты.
+
+## Стек
+
+- **Бот (`bot/`)** — Node.js + `node-telegram-bot-api@^1.2.0`, long polling
+- **WebApp (`webapp/`)** — React 18 + Vite + Tailwind CSS, публикуется на GitHub Pages
 
 ## Что внутри
 
@@ -14,41 +19,48 @@ Telegram-бот с встроенным WebApp-казино. Всё настра
 - `/help` — помощь
 - Реферальная система, локальная JSON-БД (`bot/data/db.json`)
 
-**WebApp (`webapp/`)** — публикуется на GitHub Pages:
-- Слоты 🎰 (3×5, 10 линий, анимация барабанов)
-- Рулетка 🎡 (европейская, цвет/чёт/ноль)
-- Кости 🎲 (меньше/больше 7, ровно 7 ×4)
-- Блэкджек ♠️ (против дилера, блэкджек ×2.5)
-- Краш 🚀 (забери выигрыш до краша)
+**WebApp (`webapp/`)** — по стандартам Telegram Mini App:
+- `tg.ready()`, `tg.expand()`, `tg.themeParams` — адаптация под тему Telegram
+- `tg.MainButton` — нативная кнопка действия внизу экрана
+- `tg.BackButton` — навигация назад
+- `tg.HapticFeedback` — тактильный отклик
+- Слоты 🎰 (3×5, 10 линий), Рулетка 🎡, Кости 🎲, Блэкджек ♠️, Краш 🚀
 - Ежедневный бонус, рефералы, достижения, топ, профиль
-- Прогресс хранится в `localStorage` (демо-режим на Play-валюту)
+- Прогресс в `localStorage` (демо на Play-валюту)
 
 ## Быстрый старт
 
 ### 1. Создай репозиторий на GitHub
-Загрузи этот код в репозиторий, например `kroshicasino`, ветка `main`.
+Загрузи этот код в репозиторий `kroshicasino`, ветка `main`.
 
 ### 2. Опубликуй WebApp на GitHub Pages
-В репозитории включи GitHub Pages (Settings → Pages → Build and deployment → Source: **GitHub Actions**).
-После первого деплоя узнай URL веб-аппа, например:
-`https://<USERNAME>.github.io/kroshicasino/`
+Включи GitHub Pages (Settings → Pages → Build and deployment → Source: **GitHub Actions**).
+После первого деплоя URL веб-аппа: `https://dmitryastashkin.github.io/kroshicasino/`
 
 ### 3. Настрой бота
-Отредактируй `bot/config.js`:
-- `WEBAPP_URL` — ссылка на твой GitHub Pages
+В `bot/config.js` уже прописан `WEBAPP_URL`. Проверь:
+- `WEBAPP_URL` — ссылка на GitHub Pages
 - `BOT_USERNAME` — имя бота без `@`
-- Остальные константы (стартовый баланс, бонусы, лимиты) — через код
+- Остальные константы — через код
 
-### 4. Запусти бота локально
+### 4. Собери иdeploy WebApp
+```bash
+cd webapp
+npm install
+npm run build
+# результат в dist/ — Actions сам задеплоит на Pages
+```
+
+### 5. Запусти бота локально
 ```bash
 cd bot
 npm install
 npm start
 ```
-Бот будет работать через long polling.
+Бот работает через long polling.
 
-### 5. Настрой бота в @BotFather
-- `/setcommands` — команды бота:
+### 6. Настрой бота в @BotFather
+- `/setcommands`:
   ```
   start - Главное меню
   balance - Баланс
@@ -62,11 +74,11 @@ npm start
 
 ## Важно про токен
 
-Токен бота указан в `bot/config.js` по запросу. **Не публикуй его в открытом доступе** — лучше вынести в `bot/config.local.js` (игнорируется git) или в переменные окружения. `config.local.js` уже не попадает в репозиторий через `.gitignore`.
+Токен бота указан в `bot/config.js`. **Не публикуй его в открытом доступе** — вынеси в `bot/config.local.js` (игнорируется git) или в переменные окружения.
 
 ## Демо vs реальные ставки
 
-WebApp сейчас работает на遊戯-валюту в `localStorage` — выигрыши не выводятся. Для реальных денег добавь бэкенд (`server/`), валидацию `initData` от Telegram и привязку к БД бота. Смотри комментарии в `webapp/state.js`.
+WebApp работает на Play-валюту в `localStorage` — выигрыши не выводятся. Для реальных денег добавь бэкенд, валидацию `initData` от Telegram и привязку к БД бота.
 
 ## Прикольные функции
 
@@ -75,5 +87,5 @@ WebApp сейчас работает на遊戯-валюту в `localStorage` �
 - 👥 Реферальная программа с бонусами
 - 🏆 8 достижений
 - 📊 Топ игроков и профиль
-- 🌙 Темный неоновый дизайн под тему Telegram
-- 🚀 Kraш с мультипликатором
+- 🌙 Неоновый дизайн под тему Telegram
+- 🚀 Краш с мультипликатором

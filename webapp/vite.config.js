@@ -6,13 +6,6 @@ export default defineConfig({
   base: '/kroshicasino/',
   build: {
     outDir: 'dist',
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'clsx', 'tailwind-merge'],
-        },
-      },
-    },
   },
   server: {
     port: 5173,

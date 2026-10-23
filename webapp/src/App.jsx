@@ -14,6 +14,7 @@ import { RouletteGame } from './components/games/Roulette';
 import { DiceGame } from './components/games/Dice';
 import { BlackjackGame } from './components/games/Blackjack';
 import { CrashGame } from './components/games/Crash';
+import { BetControl } from './components/games/BetControl';
 import { Toast } from './components/ui/Toast';
 import { useToast } from './components/ui/Toast';
 
@@ -35,7 +36,7 @@ const GAME_LABELS = {
 };
 
 function App() {
-  const { tg, user, themeParams, ready, setHeaderColor, haptic } = useTelegram();
+  const { tg, user, ready, setHeaderColor, haptic } = useTelegram();
   const { toast, show } = useToast();
 
   const [state, setState] = useState(() => loadState());
@@ -49,15 +50,13 @@ function App() {
   // Initialize Telegram WebApp
   useEffect(() => {
     ready();
-    if (themeParams?.bg_color) {
-      setHeaderColor(themeParams.bg_color);
-      document.documentElement.style.setProperty('--tg-bg', themeParams.bg_color);
-      document.documentElement.style.setProperty('--tg-text', themeParams.text_color || '#f3f4f6');
-      document.documentElement.style.setProperty('--tg-button', themeParams.button_color || '#c084fc');
-      document.documentElement.style.setProperty('--tg-button-text', themeParams.button_text_color || '#ffffff');
+    // Приложение всегда тёмное — не наследуем светлую тему Telegram,
+    // иначе получаем белый фон и невидимый светлый текст.
+    setHeaderColor('#0a0a0f');
+    if (tg) {
+      try { tg.setBackgroundColor('#0a0a0f'); } catch (e) {}
     }
-    document.body.style.backgroundColor = themeParams?.bg_color || '#0a0a0f';
-  }, [ready, themeParams, setHeaderColor]);
+  }, [ready, setHeaderColor, tg]);
 
   // Persist state
   useEffect(() => {
@@ -235,6 +234,12 @@ function App() {
                   </button>
                 ))}
               </div>
+
+              <BetControl
+                bet={bet}
+                setBet={setBet}
+                balance={balance}
+              />
 
               <GameComponent
                 balance={balance}

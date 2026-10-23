@@ -213,23 +213,12 @@ function App() {
 
           {currentGame ? (
             <div className="max-w-md mx-auto space-y-4">
-              <div className="flex items-center justify-between gap-2">
-                <button
-                  className="flex items-center gap-2 text-sm text-kroshi-text-dim hover:text-kroshi-text"
-                  onClick={backToGames}
-                >
-                  ← Все игры
-                </button>
-                <button
-                  className="p-2 rounded-xl bg-kroshi-panel2 border border-kroshi-border text-kroshi-text hover:bg-kroshi-border transition-colors"
-                  aria-label="Меню"
-                  onClick={() => { haptic('light'); setSidebarOpen(true); }}
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                </button>
-              </div>
+              <button
+                className="flex items-center gap-2 text-sm text-kroshi-text-dim hover:text-kroshi-text"
+                onClick={backToGames}
+              >
+                ← Все игры
+              </button>
 
               <div className="flex gap-1.5 overflow-x-auto pb-1">
                 {GAME_KEYS.map((key) => (

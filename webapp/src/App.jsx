@@ -25,6 +25,15 @@ const GAME_COMPONENTS = {
   crash: CrashGame,
 };
 
+const GAME_KEYS = ['slots', 'roulette', 'dice', 'blackjack', 'crash'];
+const GAME_LABELS = {
+  slots: '🎰 Слоты',
+  roulette: '🎡 Рулетка',
+  dice: '🎲 Кости',
+  blackjack: '♠️ Блэкджек',
+  crash: '🚀 Краш',
+};
+
 function App() {
   const { tg, user, themeParams, ready, setHeaderColor, haptic } = useTelegram();
   const { toast, show } = useToast();
@@ -191,6 +200,7 @@ function App() {
             <Sidebar
               active={activeSection}
               onSelect={(key) => {
+                setCurrentGame(null);
                 setActiveSection(key);
                 setSidebarOpen(false);
                 haptic('light');
@@ -202,13 +212,41 @@ function App() {
           )}
 
           {currentGame ? (
-            <div className="max-w-md mx-auto space-y-6">
-              <button
-                className="flex items-center gap-2 text-sm text-kroshi-text-dim hover:text-kroshi-text mb-2"
-                onClick={backToGames}
-              >
-                ← Назад
-              </button>
+            <div className="max-w-md mx-auto space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <button
+                  className="flex items-center gap-2 text-sm text-kroshi-text-dim hover:text-kroshi-text"
+                  onClick={backToGames}
+                >
+                  ← Все игры
+                </button>
+                <button
+                  className="p-2 rounded-xl bg-kroshi-panel2 border border-kroshi-border text-kroshi-text hover:bg-kroshi-border transition-colors"
+                  aria-label="Меню"
+                  onClick={() => { haptic('light'); setSidebarOpen(true); }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex gap-1.5 overflow-x-auto pb-1">
+                {GAME_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      currentGame === key
+                        ? 'bg-kroshi-accent/20 text-kroshi-accent border border-kroshi-accent/40'
+                        : 'bg-kroshi-panel2 border border-kroshi-border text-kroshi-text-dim'
+                    }`}
+                    onClick={() => { haptic('light'); setCurrentGame(key); }}
+                  >
+                    {GAME_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+
               <GameComponent
                 balance={balance}
                 onPlay={playGame}

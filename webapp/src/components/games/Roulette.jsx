@@ -4,8 +4,14 @@ import { Button } from '../ui/Button';
 import { useTelegram } from '../../hooks/useTelegram';
 import { format } from '../../state';
 
-const NUMBERS = Array.from({ length: 37 }, (_, i) => i);
+// Европейская рулетка: порядок чисел на колесе
+const WHEEL_ORDER = [
+  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10,
+  5, 24, 16, 33, 1, 20, 14, 31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
+];
 const RED = new Set([1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36]);
+const SEGMENTS = WHEEL_ORDER.length; // 37
+const SEG_DEG = 360 / SEGMENTS;
 
 function colorOf(n) {
   if (n === 0) return 'green';
@@ -13,33 +19,80 @@ function colorOf(n) {
 }
 
 function colorName(c) {
-  return c === 'red' ? 'Красное' : c === 'black' ? 'Чёрное' : 'Зеленый (0)';
+  return c === 'red' ? 'Красное' : c === 'black' ? 'Чёрное' : 'Зеро';
 }
 
-export function RouletteGame({ balance, onPlay, bet, setBet }) {
+/** SVG-колесо с 37 пронумерованными секторами */
+function WheelFace() {
+  const rad = (a) => (a * Math.PI) / 180;
+  return (
+    <svg viewBox="0 0 200 200" className="w-full h-full">
+      {WHEEL_ORDER.map((num, i) => {
+        const start = i * SEG_DEG - 90 - SEG_DEG / 2;
+        const end = start + SEG_DEG;
+        const x1 = 100 + 95 * Math.cos(rad(start));
+        const y1 = 100 + 95 * Math.sin(rad(start));
+        const x2 = 100 + 95 * Math.cos(rad(end));
+        const y2 = 100 + 95 * Math.sin(rad(end));
+        const col = colorOf(num);
+        const fill = col === 'red' ? '#dc2626' : col === 'green' ? '#16a34a' : '#1f2937';
+        const mid = start + SEG_DEG / 2;
+        const tx = 100 + 72 * Math.cos(rad(mid));
+        const ty = 100 + 72 * Math.sin(rad(mid));
+        return (
+          <g key={num}>
+            <path
+              d={`M100,100 L${x1},${y1} A95,95 0 0,1 ${x2},${y2} Z`}
+              fill={fill}
+              stroke="#0a0a0f"
+              strokeWidth="0.6"
+            />
+            <text
+              x={tx}
+              y={ty}
+              fill="#fff"
+              fontSize="9"
+              fontWeight="bold"
+              textAnchor="middle"
+              dominantBaseline="central"
+              transform={`rotate(${mid + 90}, ${tx}, ${ty})`}
+            >
+              {num}
+            </text>
+          </g>
+        );
+      })}
+      <circle cx="100" cy="100" r="30" fill="#131321" stroke="#2a2a40" strokeWidth="2" />
+    </svg>
+  );
+}
+
+export function RouletteGame({ balance, onPlay, bet }) {
   const { haptic, hapticNotification, showMainButton, hideMainButton } = useTelegram();
   const [spinning, setSpinning] = useState(false);
-  [useState(0)]; // result number placeholder
   const [result, setResult] = useState(null);
-  const [message, setMessage] = useState('Ставь и крути');
+  const [message, setMessage] = useState('Выбери ставку и крути');
   const [activeBet, setActiveBet] = useState(null);
-  const wheelRef = useRef(null);
+  const [wheel, setWheel] = useState(null);
   const degRef = useRef(0);
+  const timerRef = useRef(null);
+  const spinningRef = useRef(false);
 
   const bets = [
-    { key: 'color:red', label: 'Красное', color: '#ef4444', mult: 2 },
-    { key: 'color:black', label: 'Чёрное', color: '#1f2937', mult: 2 },
-    { key: 'even', label: 'Чёт', mult: 2 },
-    { key: 'odd', label: 'Нечёт', mult: 2 },
-    { key: 'zero', label: '0', mult: 35 },
+    { key: 'color:red', label: 'Красное ×2' },
+    { key: 'color:black', label: 'Чёрное ×2' },
+    { key: 'even', label: 'Чёт ×2' },
+    { key: 'odd', label: 'Нечёт ×2' },
+    { key: 'zero', label: 'Зеро ×35' },
   ];
 
   useEffect(() => {
-    setResult(null);
-    setMessage('Ставь и крути');
-  }, [bet]);
+    return () => clearTimeout(timerRef.current);
+  }, []);
 
   const doSpin = useCallback(() => {
+    if (spinningRef.current) return;
+
     const betAmount = parseInt(bet, 10) || 1;
     if (!balance || betAmount > balance) {
       hapticNotification('error');
@@ -48,28 +101,33 @@ export function RouletteGame({ balance, onPlay, bet, setBet }) {
     }
     if (!activeBet) {
       hapticNotification('error');
-      setMessage('Выбери ставку');
+      setMessage('Сначала выбери ставку');
       return;
     }
 
+    spinningRef.current = true;
     setSpinning(true);
     setResult(null);
+    setMessage('Крутится…');
+    haptic('medium');
 
-    const targetDeg = 1440 + Math.floor(Math.random() * 360);
-    degRef.current += targetDeg;
+    // Результат выбираем заранее и доворачиваем колесо ровно под указатель (сверху).
+    const winIndex = Math.floor(Math.random() * SEGMENTS);
+    const num = WHEEL_ORDER[winIndex];
+    const col = colorOf(num);
 
-    const wheelEl = wheelRef.current;
-    wheelEl.style.transition = 'transform 4s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-    wheelEl.style.transform = `rotate(${degRef.current}deg)`;
+    const targetAngle = 360 - winIndex * SEG_DEG;
+    const currentMod = ((degRef.current % 360) + 360) % 360;
+    const delta = ((targetAngle - currentMod) % 360 + 360) % 360;
+    degRef.current += 5 * 360 + delta;
 
-    setTimeout(() => {
-      wheelEl.style.transition = 'none';
+    setWheel({
+      transform: `rotate(${degRef.current}deg)`,
+      transition: 'transform 4.2s cubic-bezier(0.15, 0.9, 0.25, 1)',
+    });
 
-      const totalDeg = degRef.current % 360;
-      const index = Math.floor(((360 - totalDeg + 90) % 360) / 360 * 37);
-      const num = NUMBERS[index % 37];
-      const col = colorOf(num);
-
+    timerRef.current = setTimeout(() => {
+      setWheel({ transform: `rotate(${degRef.current}deg)`, transition: 'none' });
       setResult({ num, col });
 
       let won = 0;
@@ -88,16 +146,17 @@ export function RouletteGame({ balance, onPlay, bet, setBet }) {
 
       if (won > 0) {
         hapticNotification('success');
-        setMessage(`Выигрыш: ${format(won)} 🍬`);
+        setMessage(`Выпало ${num} — выигрыш ${format(won)} 🍬`);
       } else {
         haptic('light');
-        setMessage('Мимо!');
+        setMessage(`Выпало ${num} (${colorName(col)}) — мимо`);
       }
 
       onPlay?.(betAmount, won, mult);
       setSpinning(false);
-    }, 4100);
-  }, [spinning, balance, bet, activeBet, onPlay, haptic, hapticNotification]);
+      spinningRef.current = false;
+    }, 4300);
+  }, [balance, bet, activeBet, onPlay, haptic, hapticNotification]);
 
   useEffect(() => {
     showMainButton({
@@ -110,11 +169,14 @@ export function RouletteGame({ balance, onPlay, bet, setBet }) {
   }, [spinning, doSpin, showMainButton, hideMainButton]);
 
   const selectBet = (key) => {
+    if (spinning) return;
     haptic('light');
     setActiveBet(key);
     setResult(null);
-    setMessage('Ставь и крути');
+    setMessage('Выбери ставку и крути');
   };
+
+  const canSpin = !spinning && balance > 0 && parseInt(bet, 10) <= balance && !!activeBet;
 
   return (
     <Card className="p-4 space-y-4">
@@ -124,48 +186,47 @@ export function RouletteGame({ balance, onPlay, bet, setBet }) {
       </CardHeader>
 
       <CardContent className="p-2">
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative w-64 h-64 mx-auto">
-            <div
-              ref={wheelRef}
-              className="w-full h-full rounded-full border-[14px] border-transparent"
-              style={{
-                borderImage: `conic-gradient(
-                  #c084fc 0deg 58deg,
-                  #f472b6 58deg 117deg,
-                  #34d399 117deg 175deg,
-                  #fbbf24 175deg 234deg,
-                  #f87171 234deg 292deg,
-                  #22d3ee 292deg 360deg
-                ) 1`,
-              }}
-            >
-              <div className="absolute inset-0 rounded-full bg-kroshi-panel flex items-center justify-center text-3xl font-black">
-                ?
-              </div>
-            </div>
-            <div className="absolute top-[-10px] left-1/2 -translate-x-1/2 text-kroshi-accent font-black text-xl">
+        <div className="flex flex-col items-center gap-3">
+          <div className="relative w-56 h-56 mx-auto">
+            <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-10 text-kroshi-accent text-2xl leading-none">
               ▼
+            </div>
+            <div className="w-full h-full" style={wheel || { transform: 'rotate(0deg)' }}>
+              <WheelFace />
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-14 h-14 rounded-full bg-kroshi-panel border border-kroshi-border flex items-center justify-center text-xl font-black">
+                {result ? result.num : '?'}
+              </div>
             </div>
           </div>
 
           {result && (
-            <div className="text-2xl font-bold flex items-center gap-2">
-              <span className={result.col === 'red' ? 'text-kroshi-danger' : result.col === 'black' ? 'text-kroshi-text-dim' : 'text-kroshi-success'}>
+            <div className="text-lg font-bold flex items-center gap-2">
+              <span
+                className={
+                  result.col === 'red'
+                    ? 'text-kroshi-danger'
+                    : result.col === 'black'
+                    ? 'text-kroshi-text-dim'
+                    : 'text-kroshi-success'
+                }
+              >
                 {result.num}
               </span>
-              <span className="text-kroshi-text-dim">({colorName(result.col)})</span>
+              <span className="text-kroshi-text-dim text-sm">({colorName(result.col)})</span>
             </div>
           )}
 
-          <p className="text-sm text-kroshi-text-dim text-center">{message}</p>
+          <p className="text-sm text-kroshi-text-dim text-center min-h-[20px]">{message}</p>
         </div>
 
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-3 gap-2 mt-3">
           {bets.map((b) => (
             <button
               key={b.key}
-              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all ${
+              disabled={spinning}
+              className={`px-2 py-2 rounded-xl text-[11px] font-bold transition-all disabled:opacity-50 ${
                 activeBet === b.key
                   ? 'bg-kroshi-accent/20 text-kroshi-accent border border-kroshi-accent/40 shadow-neon-sm'
                   : 'bg-kroshi-panel2 border border-kroshi-border text-kroshi-text-dim hover:bg-kroshi-border hover:text-kroshi-text'
@@ -178,14 +239,8 @@ export function RouletteGame({ balance, onPlay, bet, setBet }) {
         </div>
       </CardContent>
 
-      <Button
-        variant="primary"
-        size="sm"
-        onClick={doSpin}
-        disabled={spinning || !balance || parseInt(bet, 10) > balance || !activeBet}
-        className="w-full"
-      >
-        Вращать
+      <Button variant="primary" size="sm" onClick={doSpin} disabled={!canSpin} className="w-full">
+        {spinning ? 'Крутится…' : 'Вращать'}
       </Button>
     </Card>
   );
